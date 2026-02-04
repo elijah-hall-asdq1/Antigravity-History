@@ -72,7 +72,7 @@ def 生成README内容(版本, 完整版本, 历史列表):
         fv = 项["full_version"]
         内容 += f"| `{v}` | [下载](https://edgedl.me.gvt1.com/edgedl/release2/j0qc3/antigravity/stable/{fv}/windows-x64/Antigravity.exe) | [下载](https://edgedl.me.gvt1.com/edgedl/release2/j0qc3/antigravity/stable/{fv}/darwin-arm/Antigravity.dmg) | [下载](https://edgedl.me.gvt1.com/edgedl/release2/j0qc3/antigravity/stable/{fv}/darwin-x64/Antigravity.dmg) | [下载](https://edgedl.me.gvt1.com/edgedl/release2/j0qc3/antigravity/stable/{fv}/linux-x64/Antigravity.tar.gz) \\| [官网](https://antigravity.google/download/linux) |\n"
 
-    内容 += "\n---\n王校长，出色！\n"
+    内容 += "\n---\nAntigravity，反重力升天！\n"
     return 内容
 
 def 加载历史记录():
