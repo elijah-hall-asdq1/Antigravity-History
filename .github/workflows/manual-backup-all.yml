@@ -1,0 +1,84 @@
+name: 手动一键备份所有历史版本
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fetch_versions:
+    name: 获取版本列表
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.get-versions.outputs.matrix }}
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 设置 Python 环境
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: 安装依赖
+        run: pip install requests
+
+      - name: 获取所有历史版本
+        id: get-versions
+        run: |
+          # 运行脚本获取 JSON 并压缩为单行
+          VERSION_JSON=$(python check_version.py --api-history)
+          echo "matrix=$VERSION_JSON" >> $GITHUB_OUTPUT
+
+  backup_releases:
+    name: 备份发布
+    needs: fetch_versions
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    strategy:
+      max-parallel: 1 # 严格串行防止速率限制
+      fail-fast: false # 即使某个版本失败，继续尝试其他版本
+      matrix:
+        item: ${{ fromJson(needs.fetch_versions.outputs.matrix) }}
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 设置 Python 环境
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: 安装依赖
+        run: pip install requests
+
+      - name: "下载安装包 (版本: ${{ matrix.item.version }})"
+        run: python check_version.py --download ${{ matrix.item.version }} ${{ matrix.item.full_version }}
+
+      - name: 创建/更新 Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ matrix.item.version }}
+          name: Antigravity ${{ matrix.item.version }}
+          files: |
+            Antigravity-*
+          body: |
+            Antigravity 历史版本存档。
+            
+            > [!IMPORTANT]
+            > **本 Release 由自动化工作流回溯备份。**
+            
+            版本号: `${{ matrix.item.version }}`
+            下载页面: https://antigravity.google/download
+            
+            Windows (x64): [下载](https://edgedl.me.gvt1.com/edgedl/release2/j0qc3/antigravity/stable/${{ matrix.item.full_version }}/windows-x64/Antigravity.exe)
+            Windows (ARM64): [下载](https://edgedl.me.gvt1.com/edgedl/release2/j0qc3/antigravity/stable/${{ matrix.item.full_version }}/windows-arm64/Antigravity.exe)
+            MacOS (Apple Silicon): [下载](https://edgedl.me.gvt1.com/edgedl/release2/j0qc3/antigravity/stable/${{ matrix.item.full_version }}/darwin-arm/Antigravity.dmg)
+            MacOS (Intel): [下载](https://edgedl.me.gvt1.com/edgedl/release2/j0qc3/antigravity/stable/${{ matrix.item.full_version }}/darwin-x64/Antigravity.dmg)
+            Linux: [下载](https://edgedl.me.gvt1.com/edgedl/release2/j0qc3/antigravity/stable/${{ matrix.item.full_version }}/linux-x64/Antigravity.tar.gz) | [官网下载](https://antigravity.google/download/linux)
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
