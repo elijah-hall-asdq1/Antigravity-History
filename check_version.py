@@ -195,6 +195,13 @@ if __name__ == "__main__":
                     "version": 项["version"],
                     "full_version": f"{项['version']}-{项['execution_id']}"
                 })
+            
+            # 按版本号升序排列 (最小版本最先执行)
+            try:
+                输出列表.sort(key=lambda x: tuple(map(int, x["version"].split('.'))))
+            except Exception:
+                pass # 如果版本号格式不符合预期，则保持原序或不处理
+
             print(json.dumps(输出列表))
         except Exception as e:
             print(f"API 请求失败: {e}", file=sys.stderr)
